@@ -21,9 +21,13 @@ import (
 )
 
 const (
+	ProtocolVersionHixie75   = -75
+	ProtocolVersionHixie76   = -76
+	ProtocolVersionHybi00    = 0
+	ProtocolVersionHybi08    = 8
 	ProtocolVersionHybi13    = 13
 	ProtocolVersionHybi      = ProtocolVersionHybi13
-	SupportedProtocolVersion = "13"
+	SupportedProtocolVersion = "13, 8"
 
 	ContinuationFrame = 0
 	TextFrame         = 1

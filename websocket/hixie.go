@@ -226,8 +226,9 @@ func (handler *hixiFrameHandler) HandleFrame(frame frameReader) (r frameReader, 
 		io.Copy(ioutil.Discard, header)
 	}
 	if frame.PayloadType() != TextFrame {
-		io.Copy(ioutil.Discard, frame)
-		return nil, nil
+                handler.conn.PayloadType = frame.PayloadType()
+		//io.Copy(ioutil.Discard, frame)
+		//return nil, nil
 	}
 	return frame, nil
 }

@@ -14,14 +14,6 @@ import (
 func newServerConn(rwc io.ReadWriteCloser, buf *bufio.ReadWriter, req *http.Request, config *Config, handshake func(*Config, *http.Request) error) (conn *Conn, err error) {
 	var hs serverHandshaker = &hybiServerHandshaker{Config: config}
 	code, err := hs.ReadHandshake(buf.Reader, req)
-	if err == ErrBadWebSocketVersion {
-		fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))
-		fmt.Fprintf(buf, "Sec-WebSocket-Version: %s\r\n", SupportedProtocolVersion)
-		buf.WriteString("\r\n")
-		buf.WriteString(err.Error())
-		buf.Flush()
-		return
-	}
 	if err != nil {
 		hs = &hixie76ServerHandshaker{Config: config}
 		code, err = hs.ReadHandshake(buf.Reader, req)
@@ -29,6 +21,14 @@ func newServerConn(rwc io.ReadWriteCloser, buf *bufio.ReadWriter, req *http.Requ
 	if err != nil {
 		hs = &hixie75ServerHandshaker{Config: config}
 		code, err = hs.ReadHandshake(buf.Reader, req)
+	}
+	if err == ErrBadWebSocketVersion {
+		fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))
+		fmt.Fprintf(buf, "Sec-WebSocket-Version: %s\r\n", SupportedProtocolVersion)
+		buf.WriteString("\r\n")
+		buf.WriteString(err.Error())
+		buf.Flush()
+		return
 	}
 	if err != nil {
 		fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))

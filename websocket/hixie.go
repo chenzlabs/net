@@ -194,12 +194,24 @@ func (buf hixieFrameReaderFactory) NewFrameReader() (r frameReader, err error) {
 
 type hixiFrameWriter struct {
 	writer *bufio.Writer
+        payloadType byte
 }
 
 func (frame *hixiFrameWriter) Write(msg []byte) (n int, err error) {
-	frame.writer.WriteByte(0)
+	frame.writer.WriteByte(frame.payloadType)
+        if frame.payloadType != 0 {
+            //TODO: write variable length header
+            i := len(msg)
+            if i >= 1 << 28 { frame.writer.WriteByte(byte((i >> 28) & 0x7f)|0x80) }
+            if i >= 1 << 21 { frame.writer.WriteByte(byte((i >> 21) & 0x7f)|0x80) }
+            if i >= 1 << 14 { frame.writer.WriteByte(byte((i >> 14) & 0x7f)|0x80) }
+            if i >= 1 << 7 { frame.writer.WriteByte(byte((i >> 7) & 0x7f)|0x80) }
+            frame.writer.WriteByte(byte(i & 0x7f))
+        }
 	frame.writer.Write(msg)
-	frame.writer.WriteByte(0xff)
+        if frame.payloadType == 0 {
+	    frame.writer.WriteByte(0xff)
+        }
 	err = frame.writer.Flush()
 	return len(msg), err
 }
@@ -214,7 +226,8 @@ func (buf hixiFrameWriterFactory) NewFrameWriter(payloadType byte) (frame frameW
 	if payloadType != TextFrame {
 		return nil, ErrNotSupported
 	}
-	return &hixiFrameWriter{writer: buf.Writer}, nil
+	return &hixiFrameWriter{writer: buf.Writer, 
+                                payloadType: payloadType}, nil
 }
 
 type hixiFrameHandler struct {

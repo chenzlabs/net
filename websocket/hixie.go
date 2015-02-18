@@ -203,10 +203,10 @@ func (frame *hixiFrameWriter) Write(msg []byte) (n int, err error) {
         } else {
             frame.writer.WriteByte(0x80)
             i := len(msg)
-            if i >= 1 << 28 { frame.writer.WriteByte(byte((i >> 28) & 0x7f)|0x80) }
-            if i >= 1 << 21 { frame.writer.WriteByte(byte((i >> 21) & 0x7f)|0x80) }
-            if i >= 1 << 14 { frame.writer.WriteByte(byte((i >> 14) & 0x7f)|0x80) }
-            if i >= 1 << 7 { frame.writer.WriteByte(byte((i >> 7) & 0x7f)|0x80) }
+            if i >= (1 << 28) { frame.writer.WriteByte(byte((i >> 28) & 0x7f)|0x80) }
+            if i >= (1 << 21) { frame.writer.WriteByte(byte((i >> 21) & 0x7f)|0x80) }
+            if i >= (1 << 14) { frame.writer.WriteByte(byte((i >> 14) & 0x7f)|0x80) }
+            if i >= (1 << 7) { frame.writer.WriteByte(byte((i >> 7) & 0x7f)|0x80) }
             frame.writer.WriteByte(byte(i & 0x7f))
         }
 	frame.writer.Write(msg)
@@ -233,12 +233,12 @@ type hixiFrameHandler struct {
 }
 
 func (handler *hixiFrameHandler) HandleFrame(frame frameReader) (r frameReader, err error) {
+        handler.conn.PayloadType = frame.PayloadType()
+
 	if header := frame.HeaderReader(); header != nil {
 		io.Copy(ioutil.Discard, header)
 	}
-	if frame.PayloadType() != TextFrame {
-                handler.conn.PayloadType = frame.PayloadType()
-	}
+
 	return frame, nil
 }
 

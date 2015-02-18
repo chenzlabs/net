@@ -198,9 +198,10 @@ type hixiFrameWriter struct {
 }
 
 func (frame *hixiFrameWriter) Write(msg []byte) (n int, err error) {
-	frame.writer.WriteByte(frame.payloadType)
-        if frame.payloadType != 0 {
-            //TODO: write variable length header
+        if frame.payloadType == TextFrame {
+            frame.writer.WriteByte(0)
+        } else {
+            frame.writer.WriteByte(0x80)
             i := len(msg)
             if i >= 1 << 28 { frame.writer.WriteByte(byte((i >> 28) & 0x7f)|0x80) }
             if i >= 1 << 21 { frame.writer.WriteByte(byte((i >> 21) & 0x7f)|0x80) }
@@ -209,7 +210,7 @@ func (frame *hixiFrameWriter) Write(msg []byte) (n int, err error) {
             frame.writer.WriteByte(byte(i & 0x7f))
         }
 	frame.writer.Write(msg)
-        if frame.payloadType == 0 {
+        if frame.payloadType == TextFrame {
 	    frame.writer.WriteByte(0xff)
         }
 	err = frame.writer.Flush()
@@ -223,11 +224,6 @@ type hixiFrameWriterFactory struct {
 }
 
 func (buf hixiFrameWriterFactory) NewFrameWriter(payloadType byte) (frame frameWriter, err error) {
-/*
-	if payloadType != TextFrame {
-		return nil, ErrNotSupported
-	}
-*/
 	return &hixiFrameWriter{writer: buf.Writer, 
                                 payloadType: payloadType}, nil
 }
@@ -242,8 +238,6 @@ func (handler *hixiFrameHandler) HandleFrame(frame frameReader) (r frameReader, 
 	}
 	if frame.PayloadType() != TextFrame {
                 handler.conn.PayloadType = frame.PayloadType()
-		//io.Copy(ioutil.Discard, frame)
-		//return nil, nil
 	}
 	return frame, nil
 }
@@ -251,8 +245,10 @@ func (handler *hixiFrameHandler) HandleFrame(frame frameReader) (r frameReader, 
 func (handler *hixiFrameHandler) WriteClose(_ int) (err error) {
 	handler.conn.wio.Lock()
 	defer handler.conn.wio.Unlock()
-	closingFrame := []byte{'\xff', '\x00'}
-	handler.conn.buf.Write(closingFrame)
+        if handler.conn.PayloadType == TextFrame {
+	    closingFrame := []byte{'\xff', '\x00'}
+	    handler.conn.buf.Write(closingFrame)
+        }
 	return handler.conn.buf.Flush()
 }
 

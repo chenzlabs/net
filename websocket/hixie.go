@@ -223,9 +223,11 @@ type hixiFrameWriterFactory struct {
 }
 
 func (buf hixiFrameWriterFactory) NewFrameWriter(payloadType byte) (frame frameWriter, err error) {
+/*
 	if payloadType != TextFrame {
 		return nil, ErrNotSupported
 	}
+*/
 	return &hixiFrameWriter{writer: buf.Writer, 
                                 payloadType: payloadType}, nil
 }

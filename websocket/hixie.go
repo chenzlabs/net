@@ -680,9 +680,17 @@ func (c *hixie75ServerHandshaker) ReadHandshake(buf *bufio.Reader, req *http.Req
 
 func (c *hixie75ServerHandshaker) AcceptHandshake(buf *bufio.Writer) (err error) {
 	if len(c.Protocol) > 0 {
+		//
+		// 20150921 mac: 
+		// XRE receiver changed at some point;
+		// now two protocols are being offered...
+		//   WebSocket-Protocol: xre_text_msgpack,xre
+		//
+/*
 		if len(c.Protocol) != 1 {
 			return ErrBadWebSocketProtocol
 		}
+*/
 	}
 
 	buf.WriteString("HTTP/1.1 101 Web Socket Protocol Handshake\r\n")
@@ -691,7 +699,13 @@ func (c *hixie75ServerHandshaker) AcceptHandshake(buf *bufio.Writer) (err error)
 	buf.WriteString("WebSocket-Origin: " + c.Origin.String() + "\r\n")
 	buf.WriteString("WebSocket-Location: " + c.Location.String() + "\r\n")
 	if len(c.Protocol) > 0 {
-		buf.WriteString("WebSocket-Protocol: " + c.Protocol[0] + "\r\n")
+		//
+		// 20150921 mac: 
+		// XRE receiver changed at some point;
+		// now two protocols are being offered...
+		//   WebSocket-Protocol: xre_text_msgpack,xre
+		//
+		buf.WriteString("WebSocket-Protocol: " + c.Protocol[len(c.Protocol)-1] + "\r\n")
 	}
 	buf.WriteString("\r\n")
 	return buf.Flush()
